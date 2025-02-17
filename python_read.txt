@@ -1,4 +1,18 @@
-for craeting file management project in improvides way:
+For creating file management project in improvised way:
 
 1. implement cloud storage implementation
-1. install dependencies : pip install pydrive google-auth google-auth-oauthlib google-auth-httplib2
+AWS S3 Integration
+1. pip install boto3
+
+2.Enable File Search with Filters
+use rapidfuzz for better performance
+pip install rapidfuzz
+
+3.Enable file search with filter
+import time
+
+4. file compression and encryption 
+
+
+
+
