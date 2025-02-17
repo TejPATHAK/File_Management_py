@@ -2,11 +2,37 @@ import os
 import shutil
 import time
 import boto3
+import zipfile
+from cryptography.fernet import Fernet  # For encryption
 from botocore.exceptions import NoCredentialsError
 from rapidfuzz import process, fuzz  # Import RapidFuzz for fuzzy matching
 
 # Initialize S3 client
 s3 = boto3.client('s3')
+
+import os
+from cryptography.fernet import Fernet
+
+def load_key(key_file="key.key"):
+    """
+    Load the encryption key from key_file if it exists,
+    otherwise generate a new key and save it to key_file.
+    """
+    if not os.path.exists(key_file):
+        key = Fernet.generate_key()
+        with open(key_file, "wb") as f:
+            f.write(key)
+        print(f"Encryption key generated and saved to '{key_file}'")
+    else:
+        with open(key_file, "rb") as f:
+            key = f.read()
+        print(f"Encryption key loaded from '{key_file}'")
+    return key
+
+# Load or generate the key (only once!)
+ENCRYPTION_KEY = load_key()  # This will create 'key.key' if it doesn't exist
+cipher = Fernet(ENCRYPTION_KEY)
+
 
 # Function to upload a file to S3
 def upload_to_s3(local_file_path, bucket_name, s3_file_name):
@@ -166,6 +192,82 @@ def file_search_menu(directory):
         else:
             print("Invalid choice. Try again.")
 
+
+# Function to upload a file to S3
+def upload_to_s3(local_file_path, bucket_name, s3_file_name):
+    try:
+        s3.upload_file(local_file_path, bucket_name, s3_file_name)
+        print(f"File '{local_file_path}' uploaded successfully to S3 bucket '{bucket_name}' as '{s3_file_name}'")
+    except FileNotFoundError:
+        print(f"Error: The file {local_file_path} was not found.")
+    except NoCredentialsError:
+        print("Error: AWS credentials not found. Please configure your AWS credentials.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+# Function to compress a file
+def compress_file(directory, file_name):
+    file_path = os.path.join(directory, file_name)
+    zip_file_path = os.path.join(directory, f"{file_name}.zip")
+
+    if os.path.exists(file_path):
+        with zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            zipf.write(file_path, arcname=file_name)
+        print(f"File '{file_name}' compressed successfully into '{zip_file_path}'")
+    else:
+        print(f"Error: File '{file_name}' not found!")
+
+
+# Function to encrypt a file
+def encrypt_file(directory, file_name):
+    file_path = os.path.join(directory, file_name)
+    encrypted_file_path = os.path.join(directory, f"{file_name}.enc")
+
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as f:
+            file_data = f.read()
+
+        # Encrypt the file data
+        encrypted_data = cipher.encrypt(file_data)
+
+        with open(encrypted_file_path, 'wb') as f:
+            f.write(encrypted_data)
+
+        print(f"File '{file_name}' encrypted successfully as '{encrypted_file_path}'")
+    else:
+        print(f"Error: File '{file_name}' not found!")
+
+# Function to decrypt a file using the same key from "key.key"
+def decrypt_file(directory, encrypted_file_name):
+    key_file = "key.key"  # Use the same key file as in load_key()
+    encrypted_file_path = os.path.join(directory, encrypted_file_name)
+    
+    # Read the encryption key from the same file
+    try:
+        with open(key_file, "rb") as keyfile:
+            key = keyfile.read()
+    except FileNotFoundError:
+        print("Error: Encryption key file not found!")
+        return
+
+    cipher = Fernet(key)
+
+    try:
+        with open(encrypted_file_path, "rb") as encrypted_file:
+            encrypted_data = encrypted_file.read()
+        
+        decrypted_data = cipher.decrypt(encrypted_data)
+        decrypted_file_path = encrypted_file_path.replace(".enc", "")
+        with open(decrypted_file_path, "wb") as decrypted_file:
+            decrypted_file.write(decrypted_data)
+
+        print(f"File decrypted successfully and saved as: {decrypted_file_path}")
+    except FileNotFoundError:
+        print(f"Error: Encrypted file '{encrypted_file_name}' not found!")
+    except Exception as e:
+        print(f"Decryption error: {e}")
+
+
 # Main menu
 def main():
     while True:
@@ -176,7 +278,10 @@ def main():
         print("4. Create Directory")
         print("5. Upload File to S3")
         print("6. Search Files")
-        print("7. Exit")
+        print("7. Compress File")
+        print("8. Encrypt File")
+        print("9. Decrypt File")
+        print("10. Exit")
 
         choice = input("Enter your choice: ")
 
@@ -203,6 +308,18 @@ def main():
             directory = input("Enter directory path: ")
             file_search_menu(directory)
         elif choice == "7":
+            directory = input("Enter directory path: ")
+            file_name = input("Enter the file name to compress: ")
+            compress_file(directory, file_name)
+        elif choice == "8":
+            directory = input("Enter directory path: ")
+            file_name = input("Enter the file name to encrypt: ")
+            encrypt_file(directory, file_name)
+        elif choice == "9":
+            directory = input("Enter directory path: ")
+            encrypted_file_name = input("Enter the encrypted file name to decrypt: ")
+            decrypt_file(directory, encrypted_file_name)
+        elif choice == "10":
             print("Exiting... Goodbye!")
             break
         else:

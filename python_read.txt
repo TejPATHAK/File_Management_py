@@ -11,6 +11,9 @@ pip install rapidfuzz
 3.Enable file search with filter
 import time
 
+pip install cryptography
+This update enhances security & efficiency while keeping your existing functionality intact.
+
 4. file compression and encryption 
 
 
