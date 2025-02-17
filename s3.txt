@@ -1,0 +1,15 @@
+import boto3
+from botocore.exceptions import NoCredentialsError
+
+# Initialize S3 client
+s3 = boto3.client('s3', aws_access_key_id='KEY',
+                      aws_secret_access_key='SECRET_KEY'
+def upload_to_s3(local_file_path, bucket_name, s3_file_name):
+    try:
+        s3.upload_file(local_file_path, bucket_name, s3_file_name)
+        print(f"File uploaded successfully to S3 at {bucket_name}/{s3_file_name}")
+    except NoCredentialsError:
+        print("Credentials not available")
+
+# Example usage
+upload_to_s3("C:\Python_Project", "create-py-bucket", "C:\Python_Project")

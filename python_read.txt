@@ -1,0 +1,4 @@
+for craeting file management project in improvides way:
+
+1. implement cloud storage implementation
+1. install dependencies : pip install pydrive google-auth google-auth-oauthlib google-auth-httplib2
