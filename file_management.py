@@ -5,19 +5,14 @@ import boto3
 import zipfile
 from cryptography.fernet import Fernet  # For encryption
 from botocore.exceptions import NoCredentialsError
-from rapidfuzz import process, fuzz  # Import RapidFuzz for fuzzy matching
+from rapidfuzz import process, fuzz  
 
-# Initialize S3 client
-s3 = boto3.client('s3')
+s3 = boto3.client('s3')                           # Initialize S3 client
 
 import os
 from cryptography.fernet import Fernet
 
 def load_key(key_file="key.key"):
-    """
-    Load the encryption key from key_file if it exists,
-    otherwise generate a new key and save it to key_file.
-    """
     if not os.path.exists(key_file):
         key = Fernet.generate_key()
         with open(key_file, "wb") as f:
@@ -30,9 +25,8 @@ def load_key(key_file="key.key"):
     return key
 
 # Load or generate the key (only once!)
-ENCRYPTION_KEY = load_key()  # This will create 'key.key' if it doesn't exist
+ENCRYPTION_KEY = load_key()  # For create 'key.key' if it doesn't exist
 cipher = Fernet(ENCRYPTION_KEY)
-
 
 # Function to upload a file to S3
 def upload_to_s3(local_file_path, bucket_name, s3_file_name):
@@ -58,11 +52,10 @@ def list_files(directory):
 def find_closest_file(directory, filename):
     files = os.listdir(directory)
     print(f"Looking for '{filename}' in directory...")
-    # Use RapidFuzz to find the closest match
-    match = process.extractOne(filename, files)
+    match = process.extractOne(filename, files)              # Use RapidFuzz to find the closest match
     print(f"Best match: {match}")
     if match:
-        return match[0]  # Return the best match
+        return match[0]  
     return None
 
 def rename_file(directory, old_name, new_name):
@@ -218,49 +211,40 @@ def compress_file(directory, file_name):
         print(f"Error: File '{file_name}' not found!")
 
 
-# Function to encrypt a file
+#encryption of file
+
 def encrypt_file(directory, file_name):
     file_path = os.path.join(directory, file_name)
     encrypted_file_path = os.path.join(directory, f"{file_name}.enc")
-
     if os.path.exists(file_path):
         with open(file_path, 'rb') as f:
             file_data = f.read()
-
-        # Encrypt the file data
         encrypted_data = cipher.encrypt(file_data)
-
         with open(encrypted_file_path, 'wb') as f:
             f.write(encrypted_data)
-
         print(f"File '{file_name}' encrypted successfully as '{encrypted_file_path}'")
     else:
         print(f"Error: File '{file_name}' not found!")
 
-# Function to decrypt a file using the same key from "key.key"
+        #decryption of file
+
 def decrypt_file(directory, encrypted_file_name):
-    key_file = "key.key"  # Use the same key file as in load_key()
+    key_file = "key.key"
     encrypted_file_path = os.path.join(directory, encrypted_file_name)
-    
-    # Read the encryption key from the same file
     try:
         with open(key_file, "rb") as keyfile:
             key = keyfile.read()
     except FileNotFoundError:
         print("Error: Encryption key file not found!")
         return
-
-    cipher = Fernet(key)
-
+    cipher_local = Fernet(key)
     try:
         with open(encrypted_file_path, "rb") as encrypted_file:
             encrypted_data = encrypted_file.read()
-        
-        decrypted_data = cipher.decrypt(encrypted_data)
+        decrypted_data = cipher_local.decrypt(encrypted_data)
         decrypted_file_path = encrypted_file_path.replace(".enc", "")
         with open(decrypted_file_path, "wb") as decrypted_file:
             decrypted_file.write(decrypted_data)
-
         print(f"File decrypted successfully and saved as: {decrypted_file_path}")
     except FileNotFoundError:
         print(f"Error: Encrypted file '{encrypted_file_name}' not found!")
