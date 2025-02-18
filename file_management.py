@@ -3,7 +3,9 @@ import shutil
 import time
 import boto3
 import zipfile
-from cryptography.fernet import Fernet  # For encryption
+import schedule           # For scheduling auto-organization
+import time as t          # Used in the schedule loop
+from cryptography.fernet import Fernet
 from botocore.exceptions import NoCredentialsError
 from rapidfuzz import process, fuzz  
 
@@ -252,7 +254,144 @@ def decrypt_file(directory, encrypted_file_name):
         print(f"Decryption error: {e}")
 
 
-# Main menu
+
+# --- AUTOMATIC FILE ORGANIZATION ---
+def organize_files(directory):
+    """
+    Organize files in the given directory into subfolders based on their extension.
+    Categories include Documents, Images, Videos, Music, Archives, and Others.
+    """
+    categories = {
+        "Documents": ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx', 'ppt', 'pptx', 'odt'],
+        "Images": ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'svg'],
+        "Videos": ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv'],
+        "Music": ['mp3', 'wav', 'flac', 'aac', 'ogg'],
+        "Archives": ['zip', 'rar', '7z', 'tar', 'gz']
+    }
+    for file in os.listdir(directory):
+        file_path = os.path.join(directory, file)
+        if os.path.isfile(file_path):
+            ext = file.split('.')[-1].lower() if '.' in file else ""
+            moved = False
+            for category, ext_list in categories.items():
+                if ext in ext_list:
+                    target_folder = os.path.join(directory, category)
+                    if not os.path.exists(target_folder):
+                        os.makedirs(target_folder)
+                    shutil.move(file_path, os.path.join(target_folder, file))
+                    print(f"Moved '{file}' to '{target_folder}'")
+                    moved = True
+                    break
+            if not moved:
+                target_folder = os.path.join(directory, "Others")
+                if not os.path.exists(target_folder):
+                    os.makedirs(target_folder)
+                shutil.move(file_path, os.path.join(target_folder, file))
+                print(f"Moved '{file}' to '{target_folder}'")
+
+def schedule_organization(directory, interval=1):
+    """
+    Schedule automatic file organization for the given directory every 'interval' minutes.
+    """
+    schedule.every(interval).minutes.do(organize_files, directory)
+    print(f"Scheduled auto-organization every {interval} minute(s) in directory '{directory}'.")
+    print("Press Ctrl+C to stop the scheduler.")
+    try:
+        while True:
+            schedule.run_pending()
+            t.sleep(1)
+    except KeyboardInterrupt:
+        print("Auto-organization scheduler stopped.")
+
+        # --- VERSION CONTROL FUNCTIONS ---
+def save_version(directory, file_name):
+    """
+    Save the current version of the specified file.
+    The version will be stored in a 'versions' subfolder with a timestamp.
+    """
+    file_path = os.path.join(directory, file_name)
+    if not os.path.exists(file_path):
+        print(f"Error: File '{file_name}' not found!")
+        return
+    versions_dir = os.path.join(directory, "versions")
+    if not os.path.exists(versions_dir):
+        os.makedirs(versions_dir)
+    base, ext = os.path.splitext(file_name)
+    timestamp = time.strftime("%Y%m%d%H%M%S")
+    versioned_file_name = f"{base}_{timestamp}{ext}"
+    versioned_file_path = os.path.join(versions_dir, versioned_file_name)
+    shutil.copy2(file_path, versioned_file_path)
+    print(f"Version saved as '{versioned_file_name}'.")
+
+def list_versions(directory, file_name):
+    """
+    List all saved versions of the specified file from the 'versions' folder.
+    """
+    versions_dir = os.path.join(directory, "versions")
+    if not os.path.exists(versions_dir):
+        print("No versions found.")
+        return []
+    base, ext = os.path.splitext(file_name)
+    versions = [f for f in os.listdir(versions_dir) if f.startswith(f"{base}_") and f.endswith(ext)]
+    if not versions:
+        print("No versions found for this file.")
+        return []
+    versions = sorted(versions)
+    print("Available versions:")
+    for idx, version in enumerate(versions, start=1):
+        print(f"{idx}. {version}")
+    return versions
+
+def restore_version(directory, file_name):
+    """
+    Restore a selected version of the specified file.
+    """
+    versions = list_versions(directory, file_name)
+    if not versions:
+        return
+    choice = input("Enter the version number to restore (or 'q' to cancel): ")
+    if choice.lower() == 'q':
+        return
+    try:
+        idx = int(choice) - 1
+        if idx < 0 or idx >= len(versions):
+            print("Invalid selection.")
+            return
+        version_to_restore = versions[idx]
+        versions_dir = os.path.join(directory, "versions")
+        version_path = os.path.join(versions_dir, version_to_restore)
+        target_path = os.path.join(directory, file_name)
+        shutil.copy2(version_path, target_path)
+        print(f"Restored version '{version_to_restore}' to '{file_name}'.")
+    except ValueError:
+        print("Invalid input.")
+
+def version_control_menu(directory):
+    """
+    Version Control submenu that allows saving, listing, and restoring versions.
+    """
+    while True:
+        print("\nVersion Control Menu")
+        print("1. Save current version")
+        print("2. List versions")
+        print("3. Restore a version")
+        print("4. Back to main menu")
+        choice = input("Enter your choice: ")
+        if choice == "1":
+            file_name = input("Enter the file name to save a version for: ")
+            save_version(directory, file_name)
+        elif choice == "2":
+            file_name = input("Enter the file name to list versions for: ")
+            list_versions(directory, file_name)
+        elif choice == "3":
+            file_name = input("Enter the file name to restore a version for: ")
+            restore_version(directory, file_name)
+        elif choice == "4":
+            break
+        else:
+            print("Invalid choice. Try again.")
+
+# --- MAIN MENU ---
 def main():
     while True:
         print("\nFile Management System")
@@ -265,10 +404,12 @@ def main():
         print("7. Compress File")
         print("8. Encrypt File")
         print("9. Decrypt File")
-        print("10. Exit")
+        print("10. Organize Files Automatically")
+        print("11. Schedule Auto-Organization")
+        print("12. Version Control")
+        print("13. Exit")
 
         choice = input("Enter your choice: ")
-
         if choice == "1":
             directory = input("Enter directory path: ")
             list_files(directory)
@@ -304,6 +445,21 @@ def main():
             encrypted_file_name = input("Enter the encrypted file name to decrypt: ")
             decrypt_file(directory, encrypted_file_name)
         elif choice == "10":
+            directory = input("Enter directory path for organization: ")
+            organize_files(directory)
+        elif choice == "11":
+            directory = input("Enter directory path for scheduled organization: ")
+            interval = input("Enter interval in minutes for auto-organization: ")
+            try:
+                interval = int(interval)
+            except ValueError:
+                print("Invalid interval, using default of 1 minute.")
+                interval = 1
+            schedule_organization(directory, interval)
+        elif choice == "12":
+            directory = input("Enter directory path for version control: ")
+            version_control_menu(directory)
+        elif choice == "13":
             print("Exiting... Goodbye!")
             break
         else:
@@ -311,3 +467,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

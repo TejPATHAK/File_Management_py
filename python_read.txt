@@ -15,6 +15,18 @@ pip install cryptography
 This update enhances security & efficiency while keeping your existing functionality intact.
 
 4. file compression and encryption 
+import zipfile            #for compression
+from cryptography.fernet import Fernet  # For encryption
+
+5. Automatic file organization
+Scans the provided directory and moves files into subfolders based on their extension 
+(e.g., Documents, Images, Videos, Music, Archives, or Others).
+
+6. Scheduled Auto-Organization
+pip install schedule
+import schedule           # For scheduling auto-organization
+import time as t          # Used in the schedule loop
+Uses the schedule module to run the organization process automatically at the interval (in minutes) you specify.
 
 
 
