@@ -28,6 +28,16 @@ import schedule           # For scheduling auto-organization
 import time as t          # Used in the schedule loop
 Uses the schedule module to run the organization process automatically at the interval (in minutes) you specify.
 
+7. AI-Powered Features Menu:
+(1) Extract text from image (OCR):
+Reads an image file using pytesseract and prints the extracted text.
+pytesseract (and ensure Tesseract OCR is installed on your system)
+pillow
+schedule (if not already installed)
+pip install pytesseract pillow schedule
+AI-Based Folder Suggestion: An AI assistant that reads file contents (images via OCR or text files) and 
+then—using a simple NLP heuristic—suggests a folder name based on the most frequent meaningful words.
+
 
 
 

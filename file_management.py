@@ -7,7 +7,15 @@ import schedule           # For scheduling auto-organization
 import time as t          # Used in the schedule loop
 from cryptography.fernet import Fernet
 from botocore.exceptions import NoCredentialsError
-from rapidfuzz import process, fuzz  
+from rapidfuzz import process, fuzz
+
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+from PIL import Image
+import re
+from collections import Counter
+
 
 s3 = boto3.client('s3')                           # Initialize S3 client
 
@@ -391,6 +399,87 @@ def version_control_menu(directory):
         else:
             print("Invalid choice. Try again.")
 
+
+# --- AI-POWERED FEATURES ---
+def suggest_folder_from_text(text):
+    """
+    Suggest a folder name based on the content of text.
+    Uses a simple heuristic: remove common stopwords, count word frequencies, and join the top words.
+    """
+    stopwords = set(["the", "and", "is", "in", "to", "of", "a", "for", "with", "on", "that", "this", "it", "as", "by", "an"])
+    words = re.findall(r'\w+', text.lower())
+    words = [word for word in words if word not in stopwords and len(word) > 3]
+    if not words:
+        return "Uncategorized"
+    counter = Counter(words)
+    most_common = counter.most_common(3)
+    suggested = "_".join([w for w, count in most_common])
+    print(f"Suggested folder name: {suggested}")
+    return suggested
+
+def ai_assistant_suggest_folder(directory, file_name):
+    """
+    Analyze the content of an image (using OCR) or a text file to suggest a folder name.
+    """
+    file_path = os.path.join(directory, file_name)
+    ext = file_name.split('.')[-1].lower()
+    text = ""
+    if ext in ["jpg", "jpeg", "png", "tiff", "bmp", "gif"]:
+        try:
+            text = pytesseract.image_to_string(Image.open(file_path))
+        except Exception as e:
+            print(f"Error during OCR: {e}")
+            return None
+    elif ext in ["txt"]:
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                text = f.read()
+        except Exception as e:
+            print(f"Error reading text file: {e}")
+            return None
+    else:
+        print("Unsupported file type for AI categorization. Only images and text files are supported.")
+        return None
+    if text:
+        print("Extracted text:")
+        print(text)
+        return suggest_folder_from_text(text)
+    else:
+        print("No text could be extracted.")
+        return None
+
+def ai_powered_features_menu(directory):
+    """
+    AI-Powered Features submenu that provides:
+      1. OCR: Extract text from an image.
+      2. Folder suggestion: Analyze file content to suggest a folder name.
+      3. Back to main menu.
+    """
+    while True:
+        print("\nAI-Powered Features Menu")
+        print("1. Extract text from image (OCR)")
+        print("2. Suggest folder name based on file contents")
+        print("3. Back to main menu")
+        choice = input("Enter your choice: ")
+        if choice == "1":
+            file_name = input("Enter image file name: ")
+            file_path = os.path.join(directory, file_name)
+            try:
+                text = pytesseract.image_to_string(Image.open(file_path))
+                print("Extracted Text:")
+                print(text)
+            except Exception as e:
+                print(f"Error during OCR: {e}")
+        elif choice == "2":
+            file_name = input("Enter file name (image or text) for categorization: ")
+            suggestion = ai_assistant_suggest_folder(directory, file_name)
+            if suggestion:
+                print(f"Suggested folder name: {suggestion}")
+        elif choice == "3":
+            break
+        else:
+            print("Invalid choice. Try again.")
+
 # --- MAIN MENU ---
 def main():
     while True:
@@ -407,7 +496,8 @@ def main():
         print("10. Organize Files Automatically")
         print("11. Schedule Auto-Organization")
         print("12. Version Control")
-        print("13. Exit")
+        print("13. AI-Powered Features")
+        print("14. Exit")
 
         choice = input("Enter your choice: ")
         if choice == "1":
@@ -460,6 +550,9 @@ def main():
             directory = input("Enter directory path for version control: ")
             version_control_menu(directory)
         elif choice == "13":
+            directory = input("Enter directory path for AI-powered features: ")
+            ai_powered_features_menu(directory)
+        elif choice == "14":
             print("Exiting... Goodbye!")
             break
         else:
