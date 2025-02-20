@@ -1,0 +1,21 @@
+2025-02-20 13:44:53,335 - INFO - Found credentials in shared credentials file: ~/.aws/credentials
+2025-02-20 13:50:09,653 - INFO - Found credentials in shared credentials file: ~/.aws/credentials
+2025-02-20 13:50:46,920 - INFO - Found credentials in shared credentials file: ~/.aws/credentials
+2025-02-20 13:51:45,184 - INFO - Found credentials in shared credentials file: ~/.aws/credentials
+2025-02-20 13:58:25,649 - INFO - Found credentials in shared credentials file: ~/.aws/credentials
+2025-02-20 14:06:44,676 - INFO - Found credentials in shared credentials file: ~/.aws/credentials
+2025-02-20 14:08:10,855 - INFO - Found credentials in shared credentials file: ~/.aws/credentials
+2025-02-20 14:08:51,614 - INFO - Found credentials in shared credentials file: ~/.aws/credentials
+2025-02-20 14:22:35,169 - INFO - Found credentials in shared credentials file: ~/.aws/credentials
+2025-02-20 14:51:14,090 - INFO - Found credentials in shared credentials file: ~/.aws/credentials
+2025-02-20 15:03:02,883 - INFO - Found credentials in shared credentials file: ~/.aws/credentials
+2025-02-20 15:03:14,253 - ERROR - Failed login attempt for user user.
+2025-02-20 15:03:46,182 - ERROR - Failed login attempt for user admin123.
+2025-02-20 15:10:23,171 - INFO - Found credentials in shared credentials file: ~/.aws/credentials
+2025-02-20 15:10:31,350 - INFO - User admin logged in successfully.
+2025-02-20 15:10:35,970 - INFO - User admin logged out.
+2025-02-20 15:10:45,143 - INFO - User user logged in successfully.
+2025-02-20 15:11:49,109 - INFO - User user exited the program.
+2025-02-20 15:11:59,644 - INFO - Found credentials in shared credentials file: ~/.aws/credentials
+2025-02-20 15:14:00,895 - INFO - User admin logged in successfully.
+2025-02-20 15:14:10,023 - INFO - User admin exited the program.

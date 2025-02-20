@@ -39,5 +39,17 @@ AI-Based Folder Suggestion: An AI assistant that reads file contents (images via
 then—using a simple NLP heuristic—suggests a folder name based on the most frequent meaningful words.
 
 
+8. Logging and user activity tracking:
+python built-in Logging module. Python’s built‐in logging module so that every major action 
+(such as file creation, deletion, renaming, uploading, compressing, encrypting,organizing, version control, and AI operations)
+recorded in a log file named file_management.log. 
+This log will include timestamps, the logging level, and a message that includes the current user (obtained via getpass.getuser()).
+import logging
+import getpass
 
-
+9. User Authentication and Role‐Based Access
+using JWT (via the PyJWT library)
+pip install pyjwt
+Functions like rename_file() and delete_path() call require_admin(), 
+so only an admin user (e.g., username "admin" with password "admin123") can perform these operations.
+Depending on your role, admin-only options (rename, delete) will be allowed only for admin users.

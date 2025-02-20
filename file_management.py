@@ -5,16 +5,72 @@ import boto3
 import zipfile
 import schedule           # For scheduling auto-organization
 import time as t          # Used in the schedule loop
+import logging
+import getpass
+import jwt                # For JWT authentication
 from cryptography.fernet import Fernet
 from botocore.exceptions import NoCredentialsError
 from rapidfuzz import process, fuzz
-
 import pytesseract
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 from PIL import Image
 import re
 from collections import Counter
+
+# Setup logging: logs will be saved in file_management.log
+logging.basicConfig(filename='file_management.log', level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+current_user = getpass.getuser()
+
+# --- Authentication Setup ---
+AUTH_SECRET = "mysecretkey"  # Secret key for JWT encoding/decoding
+
+# Hardcoded users database
+users = {
+    "admin": {"password": "admin123", "role": "admin"},
+    "user": {"password": "user123", "role": "user"}
+}
+
+# Global variables to store authentication token and logged-in username
+auth_token = None
+logged_in_user = None
+
+def login():
+    global auth_token, logged_in_user
+    print("=== Login ===")
+    username = input("Username: ")
+    password = input("Password: ")
+    if username in users and users[username]["password"] == password:
+        payload = {
+            "username": username,
+            "role": users[username]["role"],
+            "iat": int(time.time())
+        }
+        auth_token = jwt.encode(payload, AUTH_SECRET, algorithm="HS256")
+        logged_in_user = username
+        logging.info(f"User {username} logged in successfully.")
+        print("Login successful!")
+    else:
+        logging.error(f"Failed login attempt for user {username}.")
+        print("Invalid credentials.")
+        login()  # Retry login
+
+def require_admin():
+    global auth_token
+    try:
+        payload = jwt.decode(auth_token, AUTH_SECRET, algorithms=["HS256"])
+        if payload.get("role") != "admin":
+            print("Permission denied: Only admins can perform this action.")
+            logging.warning(f"User {payload.get('username')} attempted admin-only action.")
+            return False
+        return True
+    except Exception as e:
+        print("Authentication error:", e)
+        logging.error(f"Authentication error: {e}")
+        return False
+
+
 
 
 s3 = boto3.client('s3')                           # Initialize S3 client
@@ -480,8 +536,17 @@ def ai_powered_features_menu(directory):
         else:
             print("Invalid choice. Try again.")
 
+def logout():
+    global auth_token, logged_in_user
+    logging.info(f"User {logged_in_user} logged out.")
+    auth_token = None
+    logged_in_user = None
+    print("Logged out successfully.")
+
+
 # --- MAIN MENU ---
 def main():
+    login()  # Call login() at the very start
     while True:
         print("\nFile Management System")
         print("1. List Files")
@@ -497,7 +562,8 @@ def main():
         print("11. Schedule Auto-Organization")
         print("12. Version Control")
         print("13. AI-Powered Features")
-        print("14. Exit")
+        print("14. Logout")
+        print("15. Exit")
 
         choice = input("Enter your choice: ")
         if choice == "1":
@@ -553,6 +619,10 @@ def main():
             directory = input("Enter directory path for AI-powered features: ")
             ai_powered_features_menu(directory)
         elif choice == "14":
+            logout()
+            login() # Prompt for login after logging out
+        elif choice == "15":
+            logging.info(f"User {logged_in_user} exited the program.")
             print("Exiting... Goodbye!")
             break
         else:
