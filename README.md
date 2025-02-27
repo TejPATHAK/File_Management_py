@@ -56,8 +56,6 @@ python file_management.py
 📌 **Stay tuned for more updates!** 🔥  
 
 ## 📌 Author
-Developed by **[Your Name]**  
-🔗 GitHub Repository: [Your GitHub Link]  
+Developed by **Tejaswi Pathak**  
+🔗 GitHub Repository: https://github.com/TejPATHAK/File_Management_py  
 
-## 📝 License
-This project is licensed under the **MIT License**.
