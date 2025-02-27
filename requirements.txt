@@ -1,0 +1,11 @@
+boto3
+jwt
+cryptography
+pytesseract
+rapidfuzz
+schedule
+logging
+getpass
+shutil
+zipfile
+pillow  # Required for image processing (OCR)
