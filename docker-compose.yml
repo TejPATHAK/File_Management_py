@@ -1,0 +1,9 @@
+version: "3"
+services:
+  file_manager:
+    build: .
+    container_name: file_management_cli
+    volumes:
+      - .:/app
+    stdin_open: true  # Keep CLI interactive
+    tty: true         # Allocate a terminal
