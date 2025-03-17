@@ -18,6 +18,8 @@ from PIL import Image
 import re
 from collections import Counter
 
+from transformers import pipeline
+
 # Setup logging: logs will be saved in file_management.log
 logging.basicConfig(filename='file_management.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
@@ -536,6 +538,30 @@ def ai_powered_features_menu(directory):
         else:
             print("Invalid choice. Try again.")
 
+
+
+def summarize_text_file(directory):
+    file_name = input("Enter the text file name to summarize: ")
+    file_path = os.path.join(directory, file_name)
+
+    if not os.path.exists(file_path):
+        print(f"Error: File '{file_name}' not found!")
+        return
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as file:
+            text = file.read()
+
+        summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+        summary = summarizer(text, max_length=150, min_length=50, do_sample=False)
+
+        print("\n=== AI-Generated Summary ===")
+        print(summary[0]["summary_text"])
+
+    except Exception as e:
+        print(f"Error in summarization: {e}")
+
+
 def logout():
     global auth_token, logged_in_user
     logging.info(f"User {logged_in_user} logged out.")
@@ -562,8 +588,9 @@ def main():
         print("11. Schedule Auto-Organization")
         print("12. Version Control")
         print("13. AI-Powered Features")
-        print("14. Logout")
-        print("15. Exit")
+        print("14. Summarize a Text File")
+        print("15. Logout")
+        print("16. Exit")
 
         choice = input("Enter your choice: ")
         if choice == "1":
@@ -619,9 +646,12 @@ def main():
             directory = input("Enter directory path for AI-powered features: ")
             ai_powered_features_menu(directory)
         elif choice == "14":
+            directory = input("Enter directory path: ")
+            summarize_text_file(directory)
+        elif choice == "15":
             logout()
             login() # Prompt for login after logging out
-        elif choice == "15":
+        elif choice == "16":
             logging.info(f"User {logged_in_user} exited the program.")
             print("Exiting... Goodbye!")
             break
